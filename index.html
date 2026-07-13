@@ -475,6 +475,28 @@ function FilterBar({label,options,active,onToggle,onClear}){
   );
 }
 
+
+// ─── Export / Import ───────────────────────────────────────────────────────
+function exportData(rows,completed,projectDocs,stakeholderDocs){
+  const payload={rows,completed,projectDocs,stakeholderDocs,exportedAt:new Date().toISOString(),version:2};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=`ProjectTracker_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();URL.revokeObjectURL(url);
+}
+
+function importData(file,onSuccess){
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      onSuccess(data);
+    }catch{alert("Invalid backup file.");}
+  };
+  reader.readAsText(file);
+}
+
 function App(){
   const[allRows,setAllRows]=useState(SEED);
   const[loaded,setLoaded]=useState(false);
@@ -492,6 +514,8 @@ function App(){
   const[formMode,setFormMode]=useState(null);
   const[deleteConfirm,setDeleteConfirm]=useState(null);
   const[showDocsLib,setShowDocsLib]=useState(false);
+  const[showImport,setShowImport]=useState(false);
+  const importRef=useRef(null);
   const[projectDocs,setProjectDocs]=useState({});
   const[stakeholderDocs,setStakeholderDocs]=useState({});
 
@@ -550,6 +574,18 @@ function App(){
   const handleEdit=data=>{userChanged.current=true;setAllRows(p=>p.map(r=>r.id===formMode.id?{...data,id:r.id}:r));setFormMode(null);};
   const handleDelete=id=>{userChanged.current=true;setAllRows(p=>p.filter(r=>r.id!==id));setDeleteConfirm(null);};
 
+  const handleImport=data=>{
+    userChanged.current=true;
+    if(data.rows){
+      const merged=mergeWithSeed(data.rows,SEED);
+      setAllRows(merged);
+    }
+    if(data.completed)setCompleted(data.completed);
+    if(data.projectDocs)setProjectDocs(data.projectDocs);
+    if(data.stakeholderDocs)setStakeholderDocs(data.stakeholderDocs);
+    alert("Backup restored successfully!");
+  };
+
   const toFormInitial=r=>({dateInput:r.date,time:r.time||"",activity:r.activity,project:r.project,stakeholder:r.stakeholder,type:r.type,priority:r.priority||"",notes:r.notes,links:r.links||[]});
 
   const cols=[{label:"Date",key:"date"},{label:"Milestone / Activity",key:"activity"},{label:"Project",key:"project"},{label:"Stakeholder",key:"stakeholder"}];
@@ -564,6 +600,9 @@ function App(){
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           {completedCount>0&&<button className={`btn-done${hideCompleted?" active":""}`} onClick={()=>setHideCompleted(h=>!h)}>{hideCompleted?`Show done (${completedCount})`:`Hide done (${completedCount})`}</button>}
+          <button className="btn btn-secondary" onClick={()=>exportData(allRows,completed,projectDocs,stakeholderDocs)} style={{borderColor:"#e2e8f0"}}>⬇ Export</button>
+          <button className="btn btn-secondary" onClick={()=>importRef.current.click()} style={{borderColor:"#e2e8f0"}}>⬆ Import</button>
+          <input ref={importRef} type="file" accept=".json" style={{display:"none"}} onChange={e=>{if(e.target.files[0])importData(e.target.files[0],handleImport);e.target.value="";}}/>
           <button className="btn btn-secondary" onClick={()=>setShowDocsLib(true)} style={{borderColor:"#e2e8f0"}}>📁 Docs Library</button>
           <button className="btn btn-primary" onClick={()=>setFormMode("add")}>+ Add Task</button>
         </div>
