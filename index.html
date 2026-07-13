@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Project Tracker</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f8fafc;color:#1e293b;font-size:14px}
+.app{max-width:1200px;margin:0 auto;padding:24px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+h1{font-size:22px;font-weight:700}
+.subtitle{font-size:12px;color:#94a3b8;margin-bottom:20px}
+.filters{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px}
+.filter-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.filter-label{font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;min-width:72px}
+.fbtn{font-size:11px;padding:3px 10px;border-radius:5px;cursor:pointer;border:1px solid #e2e8f0;background:transparent;color:#64748b;transition:all .15s}
+.fbtn.on{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8;font-weight:500}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+th{text-align:left;padding:9px 12px;font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;white-space:nowrap;border-bottom:1.5px solid #e2e8f0;user-select:none}
+th:hover{color:#475569}
+td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.overdue{background:#fff5f5}
+tr.today{background:#fffbeb}
+tr.reminder{background:#f8f7ff}
+tr.done{opacity:.4}
+tr:hover td{background:#f8fafc!important}
+.badge{display:inline-block;border-radius:5px;padding:2px 7px;font-size:11px;font-weight:500}
+.badge-date{background:#f1f5f9;color:#64748b}
+.badge-date.overdue{background:#fee2e2;color:#b91c1c;font-weight:600}
+.badge-date.today{background:#fef3c7;color:#92400e;font-weight:600}
+.badge-date.reminder{background:#ede9fe;color:#6d28d9}
+.badge-am{background:#e0f2fe;color:#0369a1;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px}
+.badge-pm{background:#fce7f3;color:#be185d;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px}
+.badge-top{background:#dc2626;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;margin-right:6px}
+.badge-today-tag{background:#fef3c7;color:#92400e;font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;margin-left:6px}
+.badge-overdue-tag{background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;margin-left:6px}
+.badge-done{background:#dcfce7;color:#15803d;font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;margin-left:6px}
+.badge-project{background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:5px;font-size:12px;font-weight:500}
+.badge-sh{background:#f3f4f6;color:#374151;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:500;margin-right:3px;display:inline-block;margin-bottom:2px}
+.badge-link{background:#f0fdf4;color:#15803d;padding:2px 7px;border-radius:5px;font-size:11px;text-decoration:none;display:inline-block;margin-right:3px;margin-bottom:2px;border:1px solid #bbf7d0}
+.badge-link:hover{background:#dcfce7}
+.id-tag{font-family:monospace;font-size:10px;color:#cbd5e1;background:#f8fafc;padding:1px 5px;border-radius:3px;margin-right:6px}
+.expand-arrow{color:#cbd5e1;font-size:10px;cursor:pointer;margin-left:4px}
+.notes-row td{padding:0 12px 10px 44px;font-size:12px;color:#64748b;font-style:italic}
+.links-row td{padding:2px 12px 10px 44px}
+.action-btn{background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:4px;font-size:13px;opacity:0;transition:opacity .15s}
+tr:hover .action-btn{opacity:1}
+.btn{padding:7px 14px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;border:none;transition:all .15s}
+.btn-primary{background:#1d4ed8;color:#fff}
+.btn-primary:hover{background:#1e40af}
+.btn-primary:disabled{background:#e2e8f0;color:#94a3b8;cursor:default}
+.btn-secondary{background:transparent;border:1px solid #e2e8f0;color:#64748b}
+.btn-secondary:hover{background:#f8fafc}
+.btn-danger{background:#ef4444;color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-done{font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer;border:1px solid #e2e8f0;background:transparent;color:#64748b}
+.btn-done.active{background:#f0fdf4;color:#15803d;border-color:#15803d}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:#fff;border-radius:12px;padding:24px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal h2{font-size:17px;font-weight:700;margin-bottom:20px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.input{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+.input:focus{border-color:#3b82f6}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.link-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.link-row .input{flex:1}
+.remove-link{background:none;border:none;cursor:pointer;color:#ef4444;font-size:16px;padding:0 4px}
+.add-link-btn{font-size:12px;color:#1d4ed8;background:none;border:1px dashed #93c5fd;border-radius:5px;padding:4px 10px;cursor:pointer;margin-top:4px}
+.add-link-btn:hover{background:#eff6ff}
+input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#16a34a}
+.today-date{font-size:12px;color:#94a3b8;font-weight:400}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useMemo,useEffect,useRef}=React;
+const STORAGE_KEY="project-tracker-local-v1";
+const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtDate=d=>`${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+const TODAY=new Date();TODAY.setHours(0,0,0,0);
+const isOverdue=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x<TODAY;};
+const isToday=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x.getTime()===TODAY.getTime();};
+
+const ALL_PROJECTS=["4th fl dish","FD L2","FD L1","Flushing L2/L4","Refrigeration Upgrades","Simply Gum","Marketplace Gas Upgrade","Marketplace Kitchen Dev","R&D Kitchen","Seraph and Manhattan Expansion","Queens Blast Redundancy","Queens Plating","Manhattan Redundancy","Bronx Redundancy","Fulfilment Redundancy","Cafe Integral","Samor","Leonberg","Wells","Thomson","Devoe"];
+
+const SEED=[
+{id:"M-001",date:"2026-06-30",activity:"Drawings back from hub",project:"FD L2",stakeholder:"Hub/Jon",notes:"Send out for bid once received.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-051",date:"2026-06-25",activity:"Follow up on design criteria",project:"FD L1",stakeholder:"Cookunity Team",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-073",date:"2026-06-27",activity:"Send Greg stamped drawings",project:"4th fl dish",stakeholder:"Greg",notes:"",time:"AM",type:"milestone",priority:"high",links:[]},
+{id:"M-067",date:"2026-06-29",activity:"Follow up with plumber for permit",project:"4th fl dish",stakeholder:"Charlie, Greg",notes:"Send to Jeff with mechanical permit.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-002",date:"2026-07-01",activity:"E-001 submittal due back",project:"4th fl dish",stakeholder:"Abdel",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-003",date:"2026-06-24",activity:"Confirm all equipment onsite",project:"4th fl dish",stakeholder:"Sammy, Greg",notes:"Confirm all equipment onsite for 4th Floor Dishroom",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-068",date:"2026-06-25",activity:"Coordinate plumbing work in 3rd floor marketplace",project:"4th fl dish",stakeholder:"Greg",notes:"",time:"AM",type:"milestone",priority:"",links:[]},
+{id:"M-008",date:"2026-08-03",activity:"A/U Inspection 1",project:"4th fl dish",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-009",date:"2026-08-10",activity:"Handover reminder - 1 week out",project:"4th fl dish",stakeholder:"",notes:"Handover (inside) target: Aug 17",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-010",date:"2026-08-17",activity:"Handover (inside date)",project:"4th fl dish",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-011",date:"2026-08-25",activity:"Handover reminder - 1 week out",project:"4th fl dish",stakeholder:"",notes:"Handover (outside) target: Sep 1",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-012",date:"2026-09-01",activity:"Handover (outside date)",project:"4th fl dish",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-045",date:"2026-07-05",activity:"Delivery reminder - garbage disposal tomorrow",project:"4th fl dish",stakeholder:"Camila",notes:"",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-046",date:"2026-07-06",activity:"Garbage disposal delivery",project:"4th fl dish",stakeholder:"Camila",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-047",date:"2026-07-30",activity:"Delivery reminder - powersoak tomorrow",project:"4th fl dish",stakeholder:"Camila",notes:"",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-048",date:"2026-07-31",activity:"Powersoak delivery (placeholder - confirm date)",project:"4th fl dish",stakeholder:"Camila",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-074",date:"2026-06-29",activity:"What happens if we fail electrical inspection?",project:"4th fl dish",stakeholder:"Abdel",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-075",date:"2026-06-29",activity:"See if Mauceri will take over permit - get it in writing",project:"4th fl dish",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-076",date:"2026-07-06",activity:"Follow up with Tom on Sammy revised drawings",project:"4th fl dish",stakeholder:"Sammy, Tom",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-079",date:"2026-07-07",activity:"Follow up with CookUnity on formal 200A authorization",project:"4th fl dish",stakeholder:"Cookunity Team",notes:"Powersoak + garbage disposal pushed over 400A budget. Emailed Mike Murphy, Nicolas, Ander on Jul 2 - no response yet.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-080",date:"2026-07-06",activity:"Review and respond to Electrical CO Proposals #2 and #3",project:"4th fl dish",stakeholder:"Greg",notes:"Sent by Maestro (Sophia/Greg) Jul 1. Still open.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-081",date:"2026-07-06",activity:"Review and forward Submittal #4 for Electrical CO3",project:"4th fl dish",stakeholder:"Greg",notes:"Sent by Maestro Jul 2 - corrected from Submittal #3.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-082",date:"2026-07-07",activity:"Get electrical contractor to check upstream KAIC ratings",project:"4th fl dish",stakeholder:"Abdel",notes:"Abdel instruction Jul 1: check upstream distribution + equipment for existing KAIC ratings and match them.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-093",date:"2026-07-08",activity:"Follow up with Camila on last Slack message",project:"4th fl dish",stakeholder:"Camila",notes:"",time:"AM",type:"milestone",priority:"",links:[]},
+{id:"M-094",date:"2026-07-08",activity:"Follow up on sprinkler - URGENT",project:"4th fl dish",stakeholder:"",notes:"",time:"AM",type:"milestone",priority:"high",links:[]},
+{id:"M-109",date:"2026-07-08",activity:"Abdel to return all open submittals - 4th floor dishroom",project:"4th fl dish",stakeholder:"Abdel",notes:"Open submittals: E-004 (light fixtures 7/6), M-001 (duct mods 7/6), M-002 (revised 7/7), Submittal #4 (Elec CO3 7/2), Submittal #5 (HVAC Louver 7/7). Open COs: CO#1 Revised Mauceri $4,080 (7/2); CO#2 Elec (7/1); CO#3 Elec (7/1); CO Panel H&L (6/30). RFI#1: KAIC rating check pending.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-123",date:"2026-07-10",activity:"Schedule roofer",project:"4th fl dish",stakeholder:"Dennis (KNS Roofing)",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-132",date:"2026-07-10",activity:"Send Jeff R&D load calc",project:"R&D Kitchen",stakeholder:"Jeff",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-004",date:"2026-06-26",activity:"Pricing for Cafe Integral due",project:"Cafe Integral",stakeholder:"Sammy",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-030",date:"2026-06-26",activity:"Place panel & refrigeration equipment orders",project:"Cafe Integral",stakeholder:"Jon/Hub, Camila",notes:"Forward all Cafe Integral submittals to David once received.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-085",date:"2026-07-07",activity:"Follow up with Cara & Neal on PandaDoc contract signature",project:"Cafe Integral",stakeholder:"Cara, Neal",notes:"Contract sent Jul 6. Targeting soft mobilization Friday Jul 10.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-086",date:"2026-07-07",activity:"Follow up with Neal on Stonhard flooring quote",project:"Cafe Integral",stakeholder:"Neal",notes:"Quote still outstanding.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-108",date:"2026-07-15",activity:"Abdel to update and return Cafe Integral drawings",project:"Cafe Integral",stakeholder:"Abdel",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-122",date:"2026-07-09",activity:"Receive panel submittal from Camila - Cafe Integral",project:"Cafe Integral",stakeholder:"Camila",notes:"Expected today. Follow up if not received by EOD.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-126",date:"2026-07-10",activity:"Confirm drains capped and HVAC demoed",project:"Cafe Integral",stakeholder:"Sammy, CN Plumbing/Jarek",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-129",date:"2026-07-16",activity:"Follow up with Bueno on structural for cooler panels",project:"Cafe Integral",stakeholder:"Bueno",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-130",date:"2026-07-16",activity:"Follow up with Sammy for sketch of piping routing",project:"Cafe Integral",stakeholder:"Sammy",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-131",date:"2026-07-16",activity:"Follow up with Sammy for sketch of condenser grate support - send to Bueno for signoff",project:"Cafe Integral",stakeholder:"Sammy, Bueno",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-061",date:"2026-07-01",activity:"Coordinate for Manhattan kitchen start tomorrow",project:"Manhattan Redundancy",stakeholder:"Cookunity Team, Sammy",notes:"Construction access Jul 2 - begin drilling, hanging pipes, etc.",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-005",date:"2026-07-02",activity:"Access to Manhattan kitchen - construction start",project:"Manhattan Redundancy",stakeholder:"Sammy",notes:"Begin drilling, hanging pipes, etc.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-023",date:"2026-06-30",activity:"Handover (outside date)",project:"Manhattan Redundancy",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-071",date:"2026-06-26",activity:"Confirm Sammy access to Manhattan",project:"Manhattan Redundancy",stakeholder:"Sammy, Cookunity Team",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-066",date:"2026-06-25",activity:"Follow up with Sammy for proposals",project:"Fulfilment Redundancy",stakeholder:"Sammy",notes:"",time:"AM",type:"milestone",priority:"",links:[]},
+{id:"M-089",date:"2026-07-07",activity:"Follow up on FFL redundancy meeting outcomes",project:"Fulfilment Redundancy",stakeholder:"Cookunity Team",notes:"Meeting with Ander and CU team was Jul 1. Confirm next steps.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-092",date:"2026-07-07",activity:"Go over piping run for FFL redundancy",project:"Fulfilment Redundancy",stakeholder:"Sal, Sammy",notes:"",time:"AM",type:"milestone",priority:"",links:[]},
+{id:"M-124",date:"2026-07-10",activity:"Schedule roofer",project:"Fulfilment Redundancy",stakeholder:"Dennis (KNS Roofing)",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-151",date:"2026-07-13",activity:"Bring up in CU call - stagger FFL sub mobilizations to finish sooner",project:"Fulfilment Redundancy",stakeholder:"Cookunity Team",notes:"Discuss whether lining subs up and staggering mobilizations would be more efficient.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-063",date:"2026-06-25",activity:"Confirm when Sammy will move into Queens Blast Cooler",project:"Queens Blast Redundancy",stakeholder:"Sammy, Cookunity Team",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-006",date:"2026-07-01",activity:"Move into Queens Blast Cooler",project:"Queens Blast Redundancy",stakeholder:"Sammy",notes:"Bring evap and condensing units to site from Bergen. Confirm unit dimensions fit inside cooler. Hang evap, tie in, pressure test, charge, commissioning, controls.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-007",date:"2026-07-08",activity:"Queens Blast Handover",project:"Queens Blast Redundancy",stakeholder:"Sammy",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-025",date:"2026-06-26",activity:"Handover reminder - 1 week out",project:"Queens Blast Redundancy",stakeholder:"",notes:"Handover (inside) target: Jul 3",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-026",date:"2026-07-03",activity:"Handover (inside date)",project:"Queens Blast Redundancy",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-027",date:"2026-07-03",activity:"Handover reminder - 1 week out",project:"Queens Blast Redundancy",stakeholder:"",notes:"Handover (outside) target: Jul 10",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-028",date:"2026-07-10",activity:"Handover (outside date)",project:"Queens Blast Redundancy",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-065",date:"2026-06-29",activity:"Coordinate cooler handoff walkthrough",project:"Queens Plating",stakeholder:"Cookunity Team",notes:"",time:"AM",type:"milestone",priority:"",links:[]},
+{id:"M-149",date:"2026-07-10",activity:"Reconcile CN Plumbing payments vs Affinity payapps for cooler upgrades",project:"Queens Plating",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-152",date:"2026-07-11",activity:"Send Jeff signed COs #1 and #2 - Queens Plating Cooler invoice #26-04.28B",project:"Queens Plating",stakeholder:"Jeff Cabo, Sophia",notes:"Jeff has chased multiple times since Jun 26. Most recent Jul 9.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-154",date:"2026-07-11",activity:"Send Jeff contract/PO info - CN Plumbing invoice 27991 ($3,100)",project:"Queens Plating",stakeholder:"Jeff Cabo",notes:"Overdue Jul 4. Jeff chased Jul 6.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-161",date:"2026-07-11",activity:"Follow up on Stonhard Queens Plating invoice ($30,000) status",project:"Queens Plating",stakeholder:"Jeff Cabo",notes:"Daniel Atwater has chased multiple times.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-064",date:"2026-06-25",activity:"Talk to Allied about filing existing hood as new",project:"R&D Kitchen",stakeholder:"Allied",notes:"",time:"AM",type:"milestone",priority:"",links:[]},
+{id:"M-069",date:"2026-06-25",activity:"Discuss mobilization",project:"R&D Kitchen",stakeholder:"Greg",notes:"",time:"AM",type:"milestone",priority:"",links:[]},
+{id:"M-014",date:"2026-08-05",activity:"Construction Start",project:"R&D Kitchen",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-015",date:"2026-09-04",activity:"A/U Inspection",project:"R&D Kitchen",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-016",date:"2026-09-18",activity:"Handover reminder - 1 week out",project:"R&D Kitchen",stakeholder:"",notes:"Handover (inside) target: Sep 25",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-017",date:"2026-09-25",activity:"Handover (inside date)",project:"R&D Kitchen",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-018",date:"2026-10-16",activity:"Handover reminder - 1 week out",project:"R&D Kitchen",stakeholder:"",notes:"Handover (outside) target: Oct 23",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-019",date:"2026-10-23",activity:"Handover (outside date)",project:"R&D Kitchen",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-049",date:"2026-06-25",activity:"Follow up with Brian Hughes on site visit",project:"Refrigeration Upgrades",stakeholder:"",notes:"FFL Redundancy",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-090",date:"2026-07-07",activity:"Confirm reefer delivery date with Jesse Moreno at DSV",project:"Refrigeration Upgrades",stakeholder:"Jesse Moreno",notes:"Targeting Monday Jul 13. Awaiting confirmation.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-150",date:"2026-07-11",activity:"Get new refrigeration vendor to Flushing",project:"Refrigeration Upgrades",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-155",date:"2026-07-11",activity:"Send Jeff contract for PFS25-063",project:"Refrigeration Upgrades",stakeholder:"Jeff Cabo",notes:"Jeff asking for contract since May. Ryan Weiss pushed Jul 9.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-163",date:"2026-07-11",activity:"Follow up on L&M Storage outstanding invoices",project:"Refrigeration Upgrades",stakeholder:"Jeff Cabo",notes:"Materials in storage. Angelo said process ASAP.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-062",date:"2026-06-26",activity:"Follow up on equipment layout",project:"Simply Gum",stakeholder:"Cookunity Team",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-138",date:"2026-10-01",activity:"Construction start (once Cafe Integral complete)",project:"Simply Gum",stakeholder:"Cookunity Team",notes:"Start once Cafe Integral done (~October). Target completion ~2027.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-139",date:"2026-07-11",activity:"Confirm ventless hood specs and design requirements",project:"Simply Gum",stakeholder:"Cookunity Team",notes:"Design pending construction start decision.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-052",date:"2026-06-30",activity:"Follow up with Jeff",project:"Marketplace Gas Upgrade",stakeholder:"Jeff",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-121",date:"2026-07-10",activity:"Follow up with Nico and Ander on equipment for Seraph and Manhattan",project:"Seraph and Manhattan Expansion",stakeholder:"Nico, Ander, Cookunity Team",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-134",date:"2026-07-11",activity:"Check with Ryan for contracts",project:"Seraph and Manhattan Expansion",stakeholder:"Ryan",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-135",date:"2026-09-01",activity:"Target completion milestone",project:"Seraph and Manhattan Expansion",stakeholder:"Nico, Cookunity Team",notes:"~Sept per CU call.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-136",date:"2026-07-11",activity:"Confirm hood type - recirculate or ducted to outside",project:"Seraph and Manhattan Expansion",stakeholder:"Cookunity Team",notes:"Decision drives plumbing/drain scope.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-137",date:"2026-07-11",activity:"Assess existing hoods, ovens and plumbing - determine Type 1 or 2",project:"Seraph and Manhattan Expansion",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-070",date:"2026-06-25",activity:"Confirm PO release",project:"Leonberg",stakeholder:"Camila",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-087",date:"2026-07-06",activity:"Review attachments added to Leonberg zoning application NRZ-26-38",project:"Leonberg",stakeholder:"",notes:"Multiple docs uploaded to Cranberry Township portal Jul 1.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-110",date:"2026-07-08",activity:"Confirm Desmone submitted permit to municipality",project:"Leonberg",stakeholder:"James Roth, Travis Howard",notes:"Permit drawings sent Jun 26. No confirmation of actual filing seen.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-111",date:"2026-07-08",activity:"Respond to Brad Mocharko - confirm 10am site visit",project:"Leonberg",stakeholder:"Brad Mocharko",notes:"Brad replied Jul 7 (unread) to the RFP. Needs response.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-112",date:"2026-07-08",activity:"Confirm Jul 14 electrical walkthrough with David Kowalski",project:"Leonberg",stakeholder:"David Kowalski",notes:"Proposed Tue Jul 14 past noon. David has not confirmed.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-113",date:"2026-07-09",activity:"Follow up with James on fabric duct quote from Duct Sox",project:"Leonberg",stakeholder:"James Roth, Camila",notes:"Quote sent Jul 2. Lead time 3-4 weeks ship + 1 week delivery.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-114",date:"2026-07-09",activity:"Confirm forklift battery charger power requirements for Pyramid MEP",project:"Leonberg",stakeholder:"James Roth, Travis Howard",notes:"Need power specs and charger shutdown sequence before drawings finalized.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-054",date:"2026-06-26",activity:"Receive revised plans",project:"Leonberg",stakeholder:"",notes:"Final Design/Engineering phase complete",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-055",date:"2026-06-29",activity:"Submit plans for permit",project:"Leonberg",stakeholder:"",notes:"Start of Permit Plan Review cycle",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-056",date:"2026-07-27",activity:"Address city comments",project:"Leonberg",stakeholder:"",notes:"Review Cycle 1 closes Jul 27 - address comments Jul 27-31",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-057",date:"2026-08-03",activity:"Review Cycle 2 (if needed)",project:"Leonberg",stakeholder:"",notes:"Aug 3-31 if required",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-058",date:"2026-08-31",activity:"Permit issued",project:"Leonberg",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-059",date:"2026-08-31",activity:"Mechanical units delivery",project:"Leonberg",stakeholder:"",notes:"~Aug 31 estimate",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-060",date:"2026-09-07",activity:"Construction Start",project:"Leonberg",stakeholder:"",notes:"6-10 weeks + inspections",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-031",date:"2026-06-30",activity:"Follow up on DOB OTH violation",project:"Thomson",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-072",date:"2026-06-29",activity:"Call Stone to clarify next steps / requirements from their proposal",project:"Thomson",stakeholder:"Stone, Ryan",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-115",date:"2026-07-08",activity:"Submit Phase 1 permit extension - call 404-865-8400 + complete extension form",project:"Wells",stakeholder:"James Roth",notes:"Permit BB-202508866 at risk of lapsing. Call inspections line + submit extension form.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-116",date:"2026-07-08",activity:"Request inspection for Phase 1 permit BB-202508866",project:"Wells",stakeholder:"James Roth",notes:"No inspection has been requested yet. Coordinate with Patti Wallis at AHJ.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-117",date:"2026-07-09",activity:"Follow up with Kendall (Hawkins) to complete and return contractor info packet",project:"Wells",stakeholder:"Kendall",notes:"Packet for permit BB-202601350 forwarded to Kendall Jul 7.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-118",date:"2026-07-09",activity:"Follow up with Kendall on Phase 2 Part 1 contract review",project:"Wells",stakeholder:"Kendall",notes:"Draft contract sent Jul 3. No response seen.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-119",date:"2026-07-09",activity:"Confirm contractor attaches license to approved Phase 2 plans",project:"Wells",stakeholder:"Kendall",notes:"City approved Phase 2 plans pending contractor license attachment.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-120",date:"2026-07-13",activity:"Phase 2 construction start",project:"Wells",stakeholder:"Kendall",notes:"Goal: Phase 2 work to begin week of Jul 13.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-164",date:"2026-07-20",activity:"Kendall (Hawkins) to mobilize at Wells",project:"Wells",stakeholder:"Kendall",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-165",date:"2026-07-13",activity:"Bring up dishwasher design and engineering on CU call",project:"Wells",stakeholder:"Cookunity Team",notes:"CU wants to add a dishwasher at Wells.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-167",date:"2026-07-13",activity:"Kendall site visit - inspect exposed wiring, Cooler #1 leak, dish room wall",project:"Wells",stakeholder:"Kendall, James Roth",notes:"Determine which items are Phase 1 warranty vs. maintenance for proper claim routing.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-168",date:"2026-07-10",activity:"Resolve dish room completion - far-side wall and drain",project:"Wells",stakeholder:"Kendall, James Roth",notes:"Nico/Justin report it has been half done for weeks. Overdue.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-169",date:"2026-07-14",activity:"Delineate Phase 1 warranty items vs. maintenance/ops",project:"Wells",stakeholder:"James Roth, Kendall",notes:"Needed before CSS will agree to pay for any repairs.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-170",date:"2026-07-14",activity:"Approve final structural pricing for Phase 2 rooftop mechanical - ground-mount option",project:"Wells",stakeholder:"Leandro Arriagada, Nico Zuleta, Cookunity Team, James Roth",notes:"Verbal estimate ~$4M vs. $3.7M budget. Work already released despite no sign-off.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-171",date:"2026-07-10",activity:"Follow up on signed revised Hawkins GC contract",project:"Wells",stakeholder:"James Roth, Kendall",notes:"Revised contract sent ~7/9-7/10. Separate from Phase 2 Part 1 Scope draft 7/3.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-172",date:"2026-07-14",activity:"Follow up on Dept. of Agriculture approval",project:"Wells",stakeholder:"James Roth",notes:"Repeated follow-ups with no resolution yet.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-173",date:"2026-07-14",activity:"Get landlord billing info to submit Georgia Power meter order",project:"Wells",stakeholder:"James Roth",notes:"Gates the electrical upgrade critical path.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-174",date:"2026-07-14",activity:"Reprice walk-in cooler/freezer units",project:"Wells",stakeholder:"Camila, Tom, James Roth",notes:"Initial vendor quotes came in much higher than estimated.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-175",date:"2026-07-24",activity:"Finalize mechanical contractor selection",project:"Wells",stakeholder:"James Roth, Leandro Arriagada",notes:"Bids ranged $762K-$1.23M.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-176",date:"2026-07-14",activity:"Confirm architect resized mechanical room for larger electrical gear",project:"Wells",stakeholder:"James Roth",notes:"Gear ordered larger than spec due to better lead time. Phillips Partnership is architect.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-177",date:"2026-07-17",activity:"Decide on VE options 1-5 to reduce Phase 2 cost",project:"Wells",stakeholder:"Nico Zuleta, Ander Badiola, Cookunity Team, James Roth",notes:"Could save $398K-$666K. Target budget $3.95M-$4.22M.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-032",date:"2026-06-29",activity:"Handover (inside date) - Phase 1",project:"Wells",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-034",date:"2026-07-06",activity:"Handover (outside date) - Phase 1",project:"Wells",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-035",date:"2026-07-07",activity:"Construction Start - Phase 2",project:"Wells",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-036",date:"2026-12-14",activity:"Handover reminder - 1 week out",project:"Wells",stakeholder:"",notes:"Handover (inside) Phase 2 target: Dec 21",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-037",date:"2026-12-21",activity:"Handover (inside date) - Phase 2",project:"Wells",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-038",date:"2027-01-11",activity:"Handover reminder - 1 week out",project:"Wells",stakeholder:"",notes:"Handover (outside) Phase 2 target: Jan 18",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-039",date:"2027-01-18",activity:"Handover (outside date) - Phase 2",project:"Wells",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-040",date:"2026-06-29",activity:"Construction Start",project:"Samor",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-088",date:"2026-07-07",activity:"Reschedule Samor design coordination meeting",project:"Samor",stakeholder:"James Roth",notes:"James canceled the Jul 6 meeting. No rescheduled date.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-127",date:"2026-07-14",activity:"Follow up with Andrew/Luke/Mass Mechanical - check if duct is ready",project:"Samor",stakeholder:"Andrew, Luke, Mass Mechanical",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-133",date:"2026-07-09",activity:"Follow up with Wesley",project:"Samor",stakeholder:"Wesley",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-041",date:"2026-08-10",activity:"Handover reminder - 1 week out",project:"Samor",stakeholder:"",notes:"Handover (inside) target: Aug 17",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-042",date:"2026-08-17",activity:"Handover (inside date)",project:"Samor",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-043",date:"2026-08-17",activity:"Handover reminder - 1 week out",project:"Samor",stakeholder:"",notes:"Handover (outside) target: Aug 24",time:"",type:"reminder",priority:"",links:[]},
+{id:"M-044",date:"2026-08-24",activity:"Handover (outside date)",project:"Samor",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-095",date:"2026-07-09",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-096",date:"2026-07-14",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-097",date:"2026-07-16",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-098",date:"2026-07-21",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-099",date:"2026-07-23",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-100",date:"2026-07-28",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-101",date:"2026-07-30",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-102",date:"2026-08-04",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-103",date:"2026-08-06",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-104",date:"2026-08-11",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-105",date:"2026-08-13",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-106",date:"2026-08-18",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-107",date:"2026-08-20",activity:"Follow up on Samor construction status",project:"Samor",stakeholder:"Luke",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-077",date:"2026-07-06",activity:"Follow up with Jon on Fresh Direct revised equipment dimensions",project:"FD L1",stakeholder:"Jon, Camila",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-128",date:"2026-07-09",activity:"Get FD L1 criteria from Tom - send to Mike Follette and review on call",project:"FD L1",stakeholder:"Tom, Mike Follette, Jon",notes:"Review on call with Mike Follette and possibly Jon or Tom.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-140",date:"2026-08-01",activity:"Target design completion (~60% currently)",project:"FD L1",stakeholder:"",notes:"Per CU call notes.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-141",date:"2026-07-11",activity:"Confirm TBD items blocking full design",project:"FD L1",stakeholder:"Cookunity Team",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-142",date:"2026-07-31",activity:"Procure panels and equipment",project:"FD L1",stakeholder:"Camila",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-143",date:"2026-07-31",activity:"Confirm specs and order 2 empanada machines",project:"FD L1",stakeholder:"Cookunity Team",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-144",date:"2026-07-11",activity:"Confirm 6x 3ft ventless hood type - recirculate or ducted",project:"FD L1",stakeholder:"Cookunity Team",notes:"Water and drain rough-in required depending on decision.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-145",date:"2026-08-01",activity:"Target design completion (~60% currently)",project:"FD L2",stakeholder:"",notes:"Per CU call notes.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-146",date:"2026-07-11",activity:"Confirm TBD items blocking full design",project:"FD L2",stakeholder:"Cookunity Team",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-147",date:"2026-07-31",activity:"Procure panels and equipment",project:"FD L2",stakeholder:"Camila",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-148",date:"2026-07-11",activity:"Confirm 6x 3ft ventless hood type - recirculate or ducted",project:"FD L2",stakeholder:"Cookunity Team",notes:"Water and drain rough-in required depending on decision.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-091",date:"2026-07-06",activity:"Process outstanding Stonhard invoice - forward to AP with executed contract",project:"Flushing L2/L4",stakeholder:"Camila",notes:"Invoice PRN029593. Executed contract received Jun 16. Needs AP processing.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-156",date:"2026-07-11",activity:"Coordinate with James to increase Metro Group PO - 4 invoices stuck ($30k+)",project:"Flushing L2/L4",stakeholder:"James Roth, Jeff Cabo",notes:"PO of $17,838.08 insufficient for any of 4 outstanding invoices.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-157",date:"2026-07-11",activity:"Confirm James approved REQ-1006979 for JAM Consultants",project:"Flushing L2/L4",stakeholder:"James Roth, Jeff Cabo",notes:"Jeff submitted REQ-1006979 Jul 6. 3 invoices awaiting.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-160",date:"2026-07-11",activity:"Confirm Locker Room and Re-Dish invoices paid (IN-771244 $112,800 and IN-771245 $14,302)",project:"Flushing L2/L4",stakeholder:"Jeff Cabo",notes:"Both submitted by Jeff Jun 24 for James approval.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-153",date:"2026-07-11",activity:"Send Jeff signed contract - Black Box Engineering invoice F630b-01",project:"4th fl dish",stakeholder:"Jeff Cabo",notes:"Jeff chasing since Jun 26. Chased again Jul 9.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-158",date:"2026-07-11",activity:"Process 4th Floor Dishroom progress payment invoice #26-06.26B",project:"4th fl dish",stakeholder:"Jeff Cabo",notes:"Submitted Jun 26 by Maestro. Jeff acknowledged receipt.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-159",date:"2026-07-11",activity:"Provide signed CO for $2,500 cleanup - close out 2nd FL Dishroom final payment",project:"FD L2",stakeholder:"Jeff Cabo, Sophia",notes:"Jeff asking since Feb 2026. Sophia said they dont have the signed CO.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-162",date:"2026-07-11",activity:"Confirm Mauceri Electric REQ-1006227 ($1,742) approved by James",project:"4th fl dish",stakeholder:"Jeff Cabo, James Roth",notes:"Jeff created REQ-1006227 Jun 4. Pending James approval.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-166",date:"2026-07-13",activity:"Walk Angelo and Ryan through Devoe cooler dropoff",project:"Devoe",stakeholder:"Angelo, Ryan",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-125",date:"2026-07-10",activity:"Schedule roofer",project:"Bronx Redundancy",stakeholder:"Dennis (KNS Roofing)",notes:"",time:"",type:"milestone",priority:"",links:[]},
+];
+
+
+// ─── Docs Library state helpers ────────────────────────────────────────────
+function loadDocs(){
+  try{const r=localStorage.getItem(STORAGE_KEY+"_docs");return r?JSON.parse(r):{projectDocs:{},stakeholderDocs:{}};}
+  catch{return{projectDocs:{},stakeholderDocs:{}};}
+}
+function saveDocs(pd,sd){
+  try{localStorage.setItem(STORAGE_KEY+"_docs",JSON.stringify({projectDocs:pd,stakeholderDocs:sd}));}catch(e){}
+}
+
+const EMPTY_FORM={dateInput:"",time:"",activity:"",project:ALL_PROJECTS[0],stakeholder:"",type:"milestone",priority:"",notes:"",links:[]};
+
+function getNextId(rows){
+  const nums=rows.map(r=>parseInt(r.id.replace("M-",""))).filter(n=>!isNaN(n));
+  return `M-${String(Math.max(0,...nums)+1).padStart(3,"0")}`;
+}
+
+function loadData(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw)return null;
+    return JSON.parse(raw);
+  }catch{return null;}
+}
+
+function saveData(rows,completed){
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify({rows,completed,savedAt:new Date().toISOString()}));}catch(e){console.error(e);}
+}
+
+function mergeWithSeed(stored,seed){
+  const storedById=Object.fromEntries(stored.map(r=>[r.id,r]));
+  const seedIds=new Set(seed.map(r=>r.id));
+  return[
+    ...seed.map(r=>storedById[r.id]?{...r,...storedById[r.id]}:r),
+    ...stored.filter(r=>!seedIds.has(r.id)),
+  ];
+}
+
+function Modal({title,onClose,children}){
+  return(
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+          <h2>{title}</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#94a3b8",lineHeight:1}}>×</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function TaskForm({initial,onSave,onCancel,allProjects,allStakeholders}){
+  const[form,setForm]=useState(initial||{...EMPTY_FORM,links:[]});
+  const set=k=>e=>setForm(f=>({...f,[k]:e.target.value}));
+  const valid=form.dateInput&&form.activity.trim();
+
+  const addLink=()=>setForm(f=>({...f,links:[...(f.links||[]),{label:"",url:""}]}));
+  const removeLink=i=>setForm(f=>({...f,links:f.links.filter((_,j)=>j!==i)}));
+  const setLink=(i,k,v)=>setForm(f=>({...f,links:f.links.map((l,j)=>j===i?{...l,[k]:v}:l)}));
+
+  const handleSave=()=>{
+    if(!valid)return;
+    const d=new Date(form.dateInput+"T12:00:00");
+    onSave({...form,date:form.dateInput,dateStr:fmtDate(d),links:form.links||[]});
+  };
+
+  const addSH=s=>setForm(f=>{
+    const cur=f.stakeholder.split(", ").map(x=>x.trim()).filter(Boolean);
+    if(cur.includes(s))return f;
+    return{...f,stakeholder:cur.concat(s).join(", ")};
+  });
+
+  return(
+    <div>
+      <div className="grid2">
+        <div className="field"><label>Date *</label><input type="date" value={form.dateInput} onChange={set("dateInput")} className="input"/></div>
+        <div className="field"><label>Time</label>
+          <select value={form.time} onChange={set("time")} className="input">
+            <option value="">-</option><option value="AM">AM</option><option value="PM">PM</option>
+          </select>
+        </div>
+      </div>
+      <div className="field"><label>Activity *</label><input type="text" value={form.activity} onChange={set("activity")} placeholder="What needs to happen?" className="input"/></div>
+      <div className="grid2">
+        <div className="field"><label>Project</label>
+          <select value={form.project} onChange={set("project")} className="input">
+            {allProjects.map(p=><option key={p}>{p}</option>)}
+          </select>
+        </div>
+        <div className="field"><label>Type</label>
+          <select value={form.type} onChange={set("type")} className="input">
+            <option value="milestone">Milestone</option><option value="reminder">Reminder</option>
+          </select>
+        </div>
+      </div>
+      <div className="grid2">
+        <div className="field"><label>Priority</label>
+          <select value={form.priority} onChange={set("priority")} className="input">
+            <option value="">Normal</option><option value="high">Top Priority</option>
+          </select>
+        </div>
+      </div>
+      <div className="field">
+        <label>Stakeholders <span style={{fontWeight:400,textTransform:"none",letterSpacing:0}}>(comma-separated)</span></label>
+        <input type="text" value={form.stakeholder} onChange={set("stakeholder")} placeholder="e.g. Sammy, Cookunity Team" className="input"/>
+        {allStakeholders.length>0&&(
+          <div style={{display:"flex",flexWrap:"wrap",gap:4,marginTop:6}}>
+            {allStakeholders.slice(0,20).map(s=>(
+              <button key={s} onClick={()=>addSH(s)} style={{fontSize:11,padding:"2px 7px",borderRadius:4,border:"1px solid #e2e8f0",background:"#f8fafc",cursor:"pointer",color:"#374151"}}>+{s}</button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="field"><label>Notes</label><textarea value={form.notes} onChange={set("notes")} rows={3} className="input" style={{resize:"vertical"}}/></div>
+      <div className="field">
+        <label>Google Drive Links / Docs</label>
+        {(form.links||[]).map((l,i)=>(
+          <div className="link-row" key={i}>
+            <input type="text" value={l.label} onChange={e=>setLink(i,"label",e.target.value)} placeholder="Label (e.g. Permit PDF)" className="input" style={{flex:"0 0 140px"}}/>
+            <input type="text" value={l.url} onChange={e=>setLink(i,"url",e.target.value)} placeholder="Paste Google Drive URL" className="input"/>
+            <button className="remove-link" onClick={()=>removeLink(i)}>×</button>
+          </div>
+        ))}
+        <button className="add-link-btn" onClick={addLink}>+ Add Link / Doc</button>
+      </div>
+      <div className="modal-footer">
+        <button className="btn btn-secondary" onClick={onCancel}>Cancel</button>
+        <button className="btn btn-primary" onClick={handleSave} disabled={!valid}>Save</button>
+      </div>
+    </div>
+  );
+}
+
+
+// ─── Docs Library Modal ────────────────────────────────────────────────────
+function DocsLibraryModal({allProjects,allStakeholders,projectDocs,stakeholderDocs,onChange,onClose}){
+  const[tab,setTab]=useState("projects");
+  const[selected,setSelected]=useState(allProjects[0]||"");
+  const[localPD,setLocalPD]=useState(JSON.parse(JSON.stringify(projectDocs)));
+  const[localSD,setLocalSD]=useState(JSON.parse(JSON.stringify(stakeholderDocs)));
+
+  const items=tab==="projects"?allProjects:allStakeholders;
+  const docs=tab==="projects"?(localPD[selected]||[]):(localSD[selected]||[]);
+
+  const setDocs=newDocs=>{
+    if(tab==="projects")setLocalPD(p=>({...p,[selected]:newDocs}));
+    else setLocalSD(p=>({...p,[selected]:newDocs}));
+  };
+  const addLink=()=>setDocs([...docs,{label:"",url:""}]);
+  const removeLink=i=>setDocs(docs.filter((_,j)=>j!==i));
+  const setLink=(i,k,v)=>setDocs(docs.map((l,j)=>j===i?{...l,[k]:v}:l));
+
+  const handleSave=()=>{onChange(localPD,localSD);onClose();};
+
+  const tabStyle=active=>({padding:"6px 14px",cursor:"pointer",border:"none",background:active?"#1d4ed8":"transparent",color:active?"#fff":"#64748b",borderRadius:"6px",fontSize:12,fontWeight:active?600:400});
+
+  return(
+    <div className="overlay" onClick={onClose}>
+      <div className="modal" style={{maxWidth:680}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <h2>Docs Library</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:"#94a3b8"}}>×</button>
+        </div>
+        <p style={{fontSize:12,color:"#94a3b8",marginBottom:16}}>Attach Google Drive links to a project or stakeholder — they appear on every matching task automatically.</p>
+        <div style={{display:"flex",gap:6,marginBottom:16,background:"#f1f5f9",padding:4,borderRadius:8,width:"fit-content"}}>
+          <button style={tabStyle(tab==="projects")} onClick={()=>{setTab("projects");setSelected(allProjects[0]||"");}}>📁 Projects</button>
+          <button style={tabStyle(tab==="stakeholders")} onClick={()=>{setTab("stakeholders");setSelected(allStakeholders[0]||"");}}>👤 Stakeholders</button>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:16,minHeight:320}}>
+          <div style={{background:"#f8fafc",borderRadius:8,padding:8,overflowY:"auto",maxHeight:400}}>
+            {items.map(item=>{
+              const hasDocs=tab==="projects"?(localPD[item]||[]).length>0:(localSD[item]||[]).length>0;
+              return(
+                <div key={item} onClick={()=>setSelected(item)} style={{padding:"7px 10px",borderRadius:6,cursor:"pointer",fontSize:12,background:selected===item?"#eff6ff":"transparent",color:selected===item?"#1d4ed8":"#374151",fontWeight:selected===item?600:400,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
+                  <span>{item}</span>
+                  {hasDocs&&<span style={{fontSize:10,background:"#dcfce7",color:"#15803d",padding:"1px 5px",borderRadius:3,fontWeight:600}}>{tab==="projects"?(localPD[item]||[]).length:(localSD[item]||[]).length}</span>}
+                </div>
+              );
+            })}
+          </div>
+          <div>
+            <div style={{fontWeight:600,fontSize:13,marginBottom:12,color:"#1e293b"}}>
+              Links for: <span style={{color:"#1d4ed8"}}>{selected}</span>
+            </div>
+            {docs.map((l,i)=>(
+              <div className="link-row" key={i} style={{marginBottom:8}}>
+                <input type="text" value={l.label} onChange={e=>setLink(i,"label",e.target.value)} placeholder="Label (e.g. Permit PDF)" className="input" style={{flex:"0 0 150px"}}/>
+                <input type="text" value={l.url} onChange={e=>setLink(i,"url",e.target.value)} placeholder="Paste Google Drive link" className="input"/>
+                <button className="remove-link" onClick={()=>removeLink(i)}>×</button>
+              </div>
+            ))}
+            <button className="add-link-btn" onClick={addLink}>+ Add Link</button>
+            {docs.length===0&&<p style={{fontSize:12,color:"#94a3b8",fontStyle:"italic",marginTop:8}}>No links yet. Add one above.</p>}
+          </div>
+        </div>
+        <div className="modal-footer" style={{marginTop:20}}>
+          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave}>Save Library</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FilterBar({label,options,active,onToggle,onClear}){
+  const allSelected=active.size===0;
+  return(
+    <div className="filter-row">
+      <span className="filter-label">{label}</span>
+      <button className={`fbtn${allSelected?" on":""}`} onClick={onClear}>All</button>
+      {options.map(o=><button key={o} className={`fbtn${active.has(o)?" on":""}`} onClick={()=>onToggle(o)}>{o}</button>)}
+    </div>
+  );
+}
+
+function App(){
+  const[allRows,setAllRows]=useState(SEED);
+  const[loaded,setLoaded]=useState(false);
+  const[completed,setCompleted]=useState({});
+  const userChanged=useRef(false);
+  const[sortCol,setSortCol]=useState("date");
+  const[sortAsc,setSortAsc]=useState(true);
+  const[projectFilter,setProjectFilter]=useState(new Set());
+  const[stakeholderFilter,setStakeholderFilter]=useState(new Set());
+  const[typeFilter,setTypeFilter]=useState(new Set());
+  const[timeFilter,setTimeFilter]=useState(new Set());
+  const[hideCompleted,setHideCompleted]=useState(false);
+  const[expandedId,setExpandedId]=useState(null);
+  const[hovered,setHovered]=useState(null);
+  const[formMode,setFormMode]=useState(null);
+  const[deleteConfirm,setDeleteConfirm]=useState(null);
+  const[showDocsLib,setShowDocsLib]=useState(false);
+  const[projectDocs,setProjectDocs]=useState({});
+  const[stakeholderDocs,setStakeholderDocs]=useState({});
+
+  useEffect(()=>{
+    const saved=loadData();
+    if(saved){
+      const merged=mergeWithSeed(saved.rows||[],SEED);
+      setAllRows(merged);
+      if(saved.completed)setCompleted(saved.completed);
+    }
+    const savedDocs=loadDocs();
+    setProjectDocs(savedDocs.projectDocs||{});
+    setStakeholderDocs(savedDocs.stakeholderDocs||{});
+    setLoaded(true);
+  },[]);
+
+  useEffect(()=>{
+    if(!loaded||!userChanged.current)return;
+    saveData(allRows,completed);
+  },[allRows,completed,loaded]);
+
+  useEffect(()=>{
+    if(!loaded)return;
+    saveDocs(projectDocs,stakeholderDocs);
+  },[projectDocs,stakeholderDocs,loaded]);
+
+  const allStakeholders=useMemo(()=>Array.from(new Set(allRows.flatMap(r=>r.stakeholder?r.stakeholder.split(", ").map(s=>s.trim()).filter(Boolean):[]))).sort(),[allRows]);
+  const allProjects=useMemo(()=>Array.from(new Set([...ALL_PROJECTS,...allRows.map(r=>r.project)])).filter(Boolean),[allRows]);
+
+  const toggle=setter=>val=>setter(p=>{const n=new Set(p);n.has(val)?n.delete(val):n.add(val);return n;});
+  const clear=setter=>()=>setter(new Set());
+
+  const rows=useMemo(()=>{
+    let d=[...allRows];
+    if(projectFilter.size>0)d=d.filter(r=>projectFilter.has(r.project));
+    if(stakeholderFilter.size>0)d=d.filter(r=>r.stakeholder.split(", ").some(s=>stakeholderFilter.has(s.trim())));
+    if(typeFilter.size>0)d=d.filter(r=>(typeFilter.has("Milestones")&&r.type==="milestone")||(typeFilter.has("Reminders")&&r.type==="reminder"));
+    if(timeFilter.size>0)d=d.filter(r=>(timeFilter.has("AM")&&r.time==="AM")||(timeFilter.has("PM")&&r.time==="PM")||(timeFilter.has("Unset")&&!r.time));
+    if(hideCompleted)d=d.filter(r=>!completed[r.id]);
+    d.sort((a,b)=>{
+      let av=sortCol==="date"?new Date(a.date):a[sortCol]||"";
+      let bv=sortCol==="date"?new Date(b.date):b[sortCol]||"";
+      if(typeof av==="string"){av=av.toLowerCase();bv=bv.toLowerCase();}
+      if(av<bv)return sortAsc?-1:1;
+      if(av>bv)return sortAsc?1:-1;
+      return 0;
+    });
+    return d;
+  },[allRows,sortCol,sortAsc,projectFilter,stakeholderFilter,typeFilter,timeFilter,hideCompleted,completed]);
+
+  const handleSort=k=>{if(sortCol===k)setSortAsc(a=>!a);else{setSortCol(k);setSortAsc(true);}};
+  const toggleComplete=(id,e)=>{e.stopPropagation();userChanged.current=true;setCompleted(p=>({...p,[id]:!p[id]}));};
+  const completedCount=Object.values(completed).filter(Boolean).length;
+
+  const handleAdd=data=>{userChanged.current=true;const id=getNextId(allRows);setAllRows(p=>[...p,{...data,id}]);setFormMode(null);};
+  const handleEdit=data=>{userChanged.current=true;setAllRows(p=>p.map(r=>r.id===formMode.id?{...data,id:r.id}:r));setFormMode(null);};
+  const handleDelete=id=>{userChanged.current=true;setAllRows(p=>p.filter(r=>r.id!==id));setDeleteConfirm(null);};
+
+  const toFormInitial=r=>({dateInput:r.date,time:r.time||"",activity:r.activity,project:r.project,stakeholder:r.stakeholder,type:r.type,priority:r.priority||"",notes:r.notes,links:r.links||[]});
+
+  const cols=[{label:"Date",key:"date"},{label:"Milestone / Activity",key:"activity"},{label:"Project",key:"project"},{label:"Stakeholder",key:"stakeholder"}];
+
+  const todayStr=`${MONTHS[TODAY.getMonth()]} ${TODAY.getDate()}, ${TODAY.getFullYear()}`;
+
+  return(
+    <div className="app">
+      <div className="header">
+        <div>
+          <h1>Project Tracker <span className="today-date">— {todayStr}</span></h1>
+        </div>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          {completedCount>0&&<button className={`btn-done${hideCompleted?" active":""}`} onClick={()=>setHideCompleted(h=>!h)}>{hideCompleted?`Show done (${completedCount})`:`Hide done (${completedCount})`}</button>}
+          <button className="btn btn-secondary" onClick={()=>setShowDocsLib(true)} style={{borderColor:"#e2e8f0"}}>📁 Docs Library</button>
+          <button className="btn btn-primary" onClick={()=>setFormMode("add")}>+ Add Task</button>
+        </div>
+      </div>
+      <p className="subtitle">{rows.length} items · All edits saved locally in your browser</p>
+
+      <div className="filters">
+        <FilterBar label="Project" options={allProjects} active={projectFilter} onToggle={toggle(setProjectFilter)} onClear={clear(setProjectFilter)}/>
+        <FilterBar label="Stakeholder" options={allStakeholders} active={stakeholderFilter} onToggle={toggle(setStakeholderFilter)} onClear={clear(setStakeholderFilter)}/>
+        <FilterBar label="Type" options={["Milestones","Reminders"]} active={typeFilter} onToggle={toggle(setTypeFilter)} onClear={clear(setTypeFilter)}/>
+        <FilterBar label="Time" options={["AM","PM","Unset"]} active={timeFilter} onToggle={toggle(setTimeFilter)} onClear={clear(setTimeFilter)}/>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style={{width:36}}/>
+            {cols.map(c=>(
+              <th key={c.key} onClick={()=>handleSort(c.key)}>
+                {c.label} <span style={{opacity:sortCol===c.key?1:.3,fontSize:9}}>{sortCol===c.key?(sortAsc?"▲":"▼"):"▲"}</span>
+              </th>
+            ))}
+            <th style={{width:60}}/>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row,i)=>{
+            const done=!!completed[row.id];
+            const ov=isOverdue(row.date);
+            const td=isToday(row.date);
+            const rem=row.type==="reminder";
+            const exp=expandedId===row.id;
+            const hov=hovered===row.id;
+            const hasExtra=row.notes||(row.links&&row.links.length>0);
+            const rowClass=`${done?"done":ov?"overdue":td?"today":rem?"reminder":""}`;
+            return(
+              <React.Fragment key={row.id}>
+                <tr className={rowClass} onMouseEnter={()=>setHovered(row.id)} onMouseLeave={()=>setHovered(null)} onClick={()=>hasExtra&&setExpandedId(exp?null:row.id)} style={{cursor:hasExtra?"pointer":"default"}}>
+                  <td onClick={e=>e.stopPropagation()}>
+                    <input type="checkbox" checked={done} onChange={e=>toggleComplete(row.id,e)}/>
+                  </td>
+                  <td>
+                    <span className={`badge badge-date${ov&&!done?" overdue":td&&!done?" today":rem?" reminder":""}`}>{row.dateStr}</span>
+                    {row.time==="AM"&&<span className="badge-am">AM</span>}
+                    {row.time==="PM"&&<span className="badge-pm">PM</span>}
+                  </td>
+                  <td>
+                    {row.priority==="high"&&!done&&<span className="badge-top">TOP</span>}
+                    <span className={`id-tag`}>{row.id}</span>
+                    <span style={{color:done?"#94a3b8":ov&&!done?"#b91c1c":rem?"#6d28d9":"#1e293b",fontStyle:rem?"italic":"normal",textDecoration:done?"line-through":"none"}}>
+                      {row.activity}
+                    </span>
+                    {td&&!done&&<span className="badge-today-tag">TODAY</span>}
+                    {ov&&!done&&<span className="badge-overdue-tag">OVERDUE</span>}
+                    {done&&<span className="badge-done">DONE</span>}
+                    {hasExtra&&<span className="expand-arrow">{exp?"▲":"▼"}</span>}
+                  </td>
+                  <td><span className="badge-project">{row.project}</span></td>
+                  <td>
+                    {row.stakeholder?row.stakeholder.split(", ").map(s=><span className="badge-sh" key={s}>{s.trim()}</span>):<span style={{color:"#cbd5e1"}}>—</span>}
+                  </td>
+                  <td onClick={e=>e.stopPropagation()} style={{textAlign:"right",whiteSpace:"nowrap"}}>
+                    <button className="action-btn" title="Edit" onClick={()=>setFormMode({...toFormInitial(row),id:row.id})}>✏️</button>
+                    <button className="action-btn" title="Delete" onClick={()=>setDeleteConfirm(row.id)}>🗑</button>
+                  </td>
+                </tr>
+                {exp&&row.notes&&(
+                  <tr className="notes-row"><td colSpan={6}>{row.notes}</td></tr>
+                )}
+                {exp&&(()=>{
+                  const taskLinks=row.links||[];
+                  const projLinks=projectDocs[row.project]||[];
+                  const shLinks=(row.stakeholder||"").split(", ").flatMap(s=>stakeholderDocs[s.trim()]||[]);
+                  const allLinks=[...taskLinks,...projLinks,...shLinks];
+                  if(allLinks.length===0)return null;
+                  return(
+                    <tr className="links-row">
+                      <td colSpan={6}>
+                        {taskLinks.map((l,j)=><a key={"t"+j} href={l.url} target="_blank" rel="noopener noreferrer" className="badge-link">📎 {l.label||l.url}</a>)}
+                        {projLinks.map((l,j)=><a key={"p"+j} href={l.url} target="_blank" rel="noopener noreferrer" className="badge-link" style={{background:"#eff6ff",borderColor:"#bfdbfe",color:"#1d4ed8"}}>🗂 {l.label||l.url}</a>)}
+                        {shLinks.map((l,j)=><a key={"s"+j} href={l.url} target="_blank" rel="noopener noreferrer" className="badge-link" style={{background:"#fdf4ff",borderColor:"#e9d5ff",color:"#7c3aed"}}>👤 {l.label||l.url}</a>)}
+                      </td>
+                    </tr>
+                  );
+                })()}
+              </React.Fragment>
+            );
+          })}
+          {rows.length===0&&<tr><td colSpan={6} style={{padding:"2rem",textAlign:"center",color:"#94a3b8",fontStyle:"italic"}}>No items match the current filters.</td></tr>}
+        </tbody>
+      </table>
+
+      {formMode==="add"&&(
+        <Modal title="Add Task" onClose={()=>setFormMode(null)}>
+          <TaskForm onSave={handleAdd} onCancel={()=>setFormMode(null)} allProjects={allProjects} allStakeholders={allStakeholders}/>
+        </Modal>
+      )}
+      {formMode&&formMode!=="add"&&(
+        <Modal title="Edit Task" onClose={()=>setFormMode(null)}>
+          <TaskForm initial={formMode} onSave={handleEdit} onCancel={()=>setFormMode(null)} allProjects={allProjects} allStakeholders={allStakeholders}/>
+        </Modal>
+      )}
+      {showDocsLib&&(
+        <DocsLibraryModal
+          allProjects={allProjects}
+          allStakeholders={allStakeholders}
+          projectDocs={projectDocs}
+          stakeholderDocs={stakeholderDocs}
+          onChange={(pd,sd)=>{userChanged.current=true;setProjectDocs(pd);setStakeholderDocs(sd);}}
+          onClose={()=>setShowDocsLib(false)}
+        />
+      )}
+      {deleteConfirm&&(
+        <Modal title="Delete task?" onClose={()=>setDeleteConfirm(null)}>
+          <p style={{color:"#64748b",margin:"0 0 20px"}}>Permanently remove <strong>{allRows.find(r=>r.id===deleteConfirm)?.activity}</strong>?</p>
+          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+            <button className="btn btn-secondary" onClick={()=>setDeleteConfirm(null)}>Cancel</button>
+            <button className="btn btn-danger" onClick={()=>handleDelete(deleteConfirm)}>Delete</button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
