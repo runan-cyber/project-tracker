@@ -122,7 +122,7 @@ const TODAY=new Date();TODAY.setHours(0,0,0,0);
 const isOverdue=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x<TODAY;};
 const isToday=d=>{const x=new Date(d);x.setHours(0,0,0,0);return x.getTime()===TODAY.getTime();};
 
-const ALL_PROJECTS=["4th fl dish","FD L2","FD L1","Flushing L2/L4","Refrigeration Upgrades","Simply Gum","Marketplace Gas Upgrade","Marketplace Kitchen Dev","R&D Kitchen","Seraph and Manhattan Expansion","Queens Blast Redundancy","Queens Plating","Manhattan Redundancy","Bronx Redundancy","Fulfilment Redundancy","Cafe Integral","Samor","Leonberg","Wells","Thomson","Devoe"];
+const ALL_PROJECTS=["4th fl dish","FD L2","FD L1","Flushing L2/L4","Refrigeration Upgrades","Simply Gum","Marketplace Gas Upgrade","Marketplace Kitchen Dev","R&D Kitchen","Seraph and Manhattan Expansion","Queens Blast Redundancy","Queens Plating","Manhattan Redundancy","Bronx Redundancy","Fulfilment Redundancy","Cafe Integral","Samor","Leonberg","Wells","Thomson","Devoe","Flushing 3FL Printer"];
 
 const SEED=[
 {id:"M-001",date:"2026-06-30",activity:"Drawings back from hub",project:"FD L2",stakeholder:"Hub/Jon",notes:"Send out for bid once received.",time:"",type:"milestone",priority:"",links:[]},
@@ -306,7 +306,17 @@ const SEED=[
 {id:"M-183",date:"2026-07-14",activity:"Follow up with JJ Sprinkler",project:"Leonberg",stakeholder:"JJ Sprinkler",notes:"",time:"",type:"milestone",priority:"",links:[]},
 {id:"M-184",date:"2026-07-14",activity:"Jon to update FD L2 with new equipment and clearances",project:"FD L2",stakeholder:"Jon",notes:"",time:"",type:"milestone",priority:"",links:[]},
 {id:"M-185",date:"2026-07-14",activity:"Tom to review Abdel's drawings for Cafe Integral",project:"Cafe Integral",stakeholder:"Tom, Abdel",notes:"",time:"",type:"milestone",priority:"",links:[]},
-{id:"M-186",date:"2026-07-14",activity:"Confirm pipe size for Sammy",project:"Fulfilment Redundancy",stakeholder:"Tom, Sammy",notes:"",time:"",type:"milestone",priority:"",links:[]}
+{id:"M-186",date:"2026-07-14",activity:"Confirm pipe size for Sammy",project:"Fulfilment Redundancy",stakeholder:"Tom, Sammy",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-187",date:"2026-07-30",activity:"Generate test fit for Domino N610i + Nilpeter + Folder/Gluer to scale",project:"Flushing 3FL Printer",stakeholder:"Leandro, Nico, Cookunity Team",notes:"3 machines: Domino N610i (MACHINE 1), Nilpeter conveyor (MACHINE 2), Folder/Gluer ~22.8x4.4ft (MACHINE 3 - specs TBD). Present to CU for approval.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-188",date:"2026-07-30",activity:"Create scope package for landlord approval — printer buildout",project:"Flushing 3FL Printer",stakeholder:"Leandro",notes:"Scope includes: electrical (400V 3-phase 60A), 3 separate exhaust systems (UV 450CFM, Corona 300CFM, Fume 400CFM), compressed air (90PSI min), network drops. All exhausts must vent directly outdoors separately.",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-189",date:"2026-08-07",activity:"File permits for printer installation",project:"Flushing 3FL Printer",stakeholder:"Leandro",notes:"Printer arriving November — quick turnaround needed.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-190",date:"2026-08-07",activity:"Source and order long-lead materials for printer buildout",project:"Flushing 3FL Printer",stakeholder:"Camila",notes:"Electrical gear, ductwork for 3 exhaust systems, compressed air drop.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-191",date:"2026-08-07",activity:"Close out bids and pricing for printer buildout",project:"Flushing 3FL Printer",stakeholder:"Leandro",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-192",date:"2026-11-01",activity:"Domino N610i printer delivery and installation target",project:"Flushing 3FL Printer",stakeholder:"Nico, Cookunity Team",notes:"Machine 1: Domino N610i. Machine 2: Nilpeter. Machine 3: Folder/Gluer (mfr TBD). Network: Wally. Compressed air: Winston.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-193",date:"2026-07-31",activity:"Schedule date for equipment hookups",project:"Samor",stakeholder:"",notes:"",time:"",type:"milestone",priority:"high",links:[]},
+{id:"M-194",date:"2026-08-04",activity:"Equipment ready for hookup",project:"Samor",stakeholder:"Cookunity Team",notes:"Confirm all equipment on-site and ready by Tuesday.",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-195",date:"2026-07-30",activity:"Confirm ACT replacement/repair",project:"Samor",stakeholder:"",notes:"",time:"",type:"milestone",priority:"",links:[]},
+{id:"M-196",date:"2026-07-31",activity:"Start coordination with Winston for dish machine move-in",project:"4th fl dish",stakeholder:"Winston, Cookunity Team",notes:"",time:"",type:"milestone",priority:"",links:[]}
 ];
 
 
@@ -583,7 +593,7 @@ function App(){
   },[]);
 
   useEffect(()=>{
-    if(!loaded||!userChanged.current)return;
+    if(!loaded)return;
     saveData(allRows,completed);
   },[allRows,completed,loaded]);
 
